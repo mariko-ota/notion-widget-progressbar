@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 500px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+
+        .title {
+            color: #999;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .progress-wrapper {
+            position: relative;
+            width: 100%;
+            height: 24px;
+            background: #f0f0f0;
+            border-radius: 12px;
+            overflow: visible;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #333;
+            border-radius: 12px;
+            transition: width 1s ease;
+        }
+
+        .work-marker {
+            position: absolute;
+            top: -3px;
+            width: 2px;
+            height: 30px;
+            background: #ff4444;
+            z-index: 10;
+        }
+
+        .percentage {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Today -->
+        <div class="container">
+            <div class="header">
+                <span class="title">Today</span>
+                <span class="value" id="timeDisplay">00:00</span>
+            </div>
+            <div class="progress-wrapper">
+                <div class="progress-bar" id="progressBarDay"></div>
+                <div class="work-marker" id="workStart" style="display: none;"></div>
+                <div class="work-marker" id="workEnd" style="display: none;"></div>
+            </div>
+            <div class="percentage" id="percentageDay">0%</div>
+        </div>
+
+        <!-- This Month -->
+        <div class="container">
+            <div class="header">
+                <span class="title">This Month</span>
+                <span class="value" id="monthDisplay">Jan 2025</span>
+            </div>
+            <div class="progress-wrapper">
+                <div class="progress-bar" id="progressBarMonth"></div>
+            </div>
+            <div class="percentage" id="percentageMonth">0%</div>
+        </div>
+
+        <!-- This Year -->
+        <div class="container">
+            <div class="header">
+                <span class="title">This Year</span>
+                <span class="value" id="yearDisplay">2025</span>
+            </div>
+            <div class="progress-wrapper">
+                <div class="progress-bar" id="progressBarYear"></div>
+                <div class="work-marker" id="yearMarker"></div>
+            </div>
+            <div class="percentage" id="percentageYear">0%</div>
+        </div>
+    </div>
+
+    <script>
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        function updateProgress() {
+            const now = new Date();
+            
+            // === Today ===
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            const dayOfWeek = now.getDay(); // 0 = Sunday, 1-5 = Mon-Fri, 6 = Saturday
+            
+            document.getElementById('timeDisplay').textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            
+            const totalSecondsInDay = 24 * 60 * 60;
+            const currentSeconds = hours * 3600 + minutes * 60 + seconds;
+            const percentageDay = (currentSeconds / totalSecondsInDay) * 100;
+            
+            document.getElementById('progressBarDay').style.width = `${percentageDay}%`;
+            document.getElementById('percentageDay').textContent = `${percentageDay.toFixed(1)}%`;
+            
+            // Show work markers on weekdays (Mon-Fri)
+            const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+            const workStart = document.getElementById('workStart');
+            const workEnd = document.getElementById('workEnd');
+            
+            if (isWeekday) {
+                workStart.style.display = 'block';
+                workEnd.style.display = 'block';
+                // 10:00 = 10/24 = 41.67%
+                workStart.style.left = `${(10 / 24) * 100}%`;
+                // 19:00 = 19/24 = 79.17%
+                workEnd.style.left = `${(19 / 24) * 100}%`;
+            } else {
+                workStart.style.display = 'none';
+                workEnd.style.display = 'none';
+            }
+            
+            // === This Month ===
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const date = now.getDate();
+            
+            document.getElementById('monthDisplay').textContent = `${monthNames[month]} ${year}`;
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const percentageMonth = (date / daysInMonth) * 100;
+            
+            document.getElementById('progressBarMonth').style.width = `${percentageMonth}%`;
+            document.getElementById('percentageMonth').textContent = `${percentageMonth.toFixed(1)}%`;
+            
+            // === This Year ===
+            document.getElementById('yearDisplay').textContent = `${year}`;
+            
+            const startOfYear = new Date(year, 0, 1);
+            const endOfYear = new Date(year, 11, 31);
+            const daysInYear = Math.ceil((endOfYear - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+            const dayOfYear = Math.ceil((now - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+            
+            const percentageYear = (dayOfYear / daysInYear) * 100;
+            
+            document.getElementById('progressBarYear').style.width = `${percentageYear}%`;
+            document.getElementById('percentageYear').textContent = `${percentageYear.toFixed(1)}%`;
+            
+            // Show year marker for Sept 18
+            const yearMarker = document.getElementById('yearMarker');
+            const sept18 = new Date(year, 8, 18); // month 8 = September, day 18
+            const sept18Day = Math.ceil((sept18 - startOfYear) / (1000 * 60 * 60 * 24)) + 1;
+            yearMarker.style.left = `${(sept18Day / daysInYear) * 100}%`;
+        }
+
+        updateProgress();
+        setInterval(updateProgress, 1000);
+    </script>
+</body>
+</html>
